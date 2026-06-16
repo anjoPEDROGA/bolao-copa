@@ -39,14 +39,7 @@ export function extractArrayPayload(value: unknown): unknown[] {
   }
 
   if (isRecord(value)) {
-    const candidates = [
-      value.data,
-      value.games,
-      value.matches,
-      value.groups,
-      value.teams,
-      value.stadiums
-    ];
+    const candidates = [value.games, value.data, value.matches, value.groups, value.teams, value.stadiums];
 
     for (const candidate of candidates) {
       if (Array.isArray(candidate)) {

@@ -8,6 +8,8 @@ import type {
   WorldcupApiStadium,
   WorldcupApiTeam
 } from "@/types";
+import { parseWorldcupLocalDateToIso } from "@/lib/datetime";
+import { getStadiumTimezone } from "@/lib/translations";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -51,6 +53,26 @@ export function readNumber(
       }
     }
   }
+  return null;
+}
+
+export function readBoolean(value: unknown): boolean | null {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === "true") {
+      return true;
+    }
+
+    if (normalized === "false") {
+      return false;
+    }
+  }
+
   return null;
 }
 
@@ -99,6 +121,48 @@ export function normalizeStatus(value: unknown): MatchStatus {
     default:
       return "scheduled";
   }
+}
+
+export function normalizeWorldcupStatus(raw: Record<string, unknown>): {
+  status: MatchStatus;
+  minute: number | null;
+} {
+  const finished = readBoolean(raw.finished);
+  const timeElapsed = readString(raw, ["time_elapsed", "status", "state"]);
+
+  if (finished === true || timeElapsed?.toLowerCase() === "finished") {
+    return { status: "finished", minute: extractMatchMinute(raw) };
+  }
+
+  if (timeElapsed) {
+    const normalized = timeElapsed.trim().toLowerCase();
+
+    if (normalized === "notstarted" || normalized === "not started") {
+      return { status: "scheduled", minute: null };
+    }
+
+    if (normalized === "postponed") {
+      return { status: "postponed", minute: null };
+    }
+
+    if (normalized === "cancelled" || normalized === "canceled") {
+      return { status: "cancelled", minute: null };
+    }
+
+    if (normalized === "live" || normalized === "playing" || normalized === "in_progress") {
+      return { status: "live", minute: extractMatchMinute(raw) };
+    }
+
+    if (/^\d+$/.test(normalized)) {
+      return { status: "live", minute: extractMatchMinute(raw) };
+    }
+  }
+
+  if (finished === false && timeElapsed === "notstarted") {
+    return { status: "scheduled", minute: null };
+  }
+
+  return { status: "scheduled", minute: extractMatchMinute(raw) };
 }
 
 export function normalizeStage(value: unknown): TournamentStage {
@@ -167,12 +231,40 @@ function normalizeStadiumId(value: unknown): string | null {
   return null;
 }
 
-function normalizeIsoString(value: unknown): string | null {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed ? trimmed : null;
+function extractMatchMinute(raw: Record<string, unknown>): number | null {
+  const minuteValue = readNumber(raw, ["minute", "match_minute", "elapsed"]);
+  if (minuteValue !== null) {
+    return Math.max(0, Math.floor(minuteValue));
   }
+
+  const timeElapsed = readString(raw, ["time_elapsed"]);
+  if (!timeElapsed) {
+    return null;
+  }
+
+  const normalized = timeElapsed.trim().toLowerCase();
+  if (normalized === "finished" || normalized === "notstarted") {
+    return null;
+  }
+
+  if (/^\d+$/.test(normalized)) {
+    return Math.max(0, Number(normalized));
+  }
+
   return null;
+}
+
+function normalizeGroupId(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.startsWith("group-") ? trimmed : `group-${trimmed}`;
 }
 
 export function normalizeWorldcupMatch(raw: WorldcupApiMatch): Match | null {
@@ -180,51 +272,44 @@ export function normalizeWorldcupMatch(raw: WorldcupApiMatch): Match | null {
     return null;
   }
 
-  const id = readString(raw, ["id", "_id", "game_id", "match_id"]);
-  const homeTeamRaw =
-    raw.home_team ?? raw.homeTeam ?? raw.team_home ?? raw.team1 ?? raw.home;
-  const awayTeamRaw =
-    raw.away_team ?? raw.awayTeam ?? raw.team_away ?? raw.team2 ?? raw.away;
-  const stadiumRaw =
-    raw.stadium ?? raw.stadium_id ?? raw.stadiumId ?? raw.venue;
-  const dateRaw =
-    raw.date ??
-    raw.datetime ??
-    raw.kickoff ??
-    raw.kickoff_at ??
-    raw.kickoffAt ??
-    raw.start_time;
+  const id = readString(raw, ["id", "_id"]);
+  const homeTeamName = readString(raw, ["home_team_name_en", "home_team", "homeTeam"]);
+  const awayTeamName = readString(raw, ["away_team_name_en", "away_team", "awayTeam"]);
+  const homeTeamIdFallback = readString(raw, ["home_team_id"]);
+  const awayTeamIdFallback = readString(raw, ["away_team_id"]);
+  const stadiumRaw = readString(raw, ["stadium_id", "stadiumId", "stadium"]);
+  const groupValue = readString(raw, ["group"]);
+  const typeValue = readString(raw, ["type"]);
+  const localDate = readString(raw, ["local_date", "date", "datetime", "kickoff", "kickoff_at", "kickoffAt"]);
 
-  const homeTeamId = normalizeTeamId(homeTeamRaw);
-  const awayTeamId = normalizeTeamId(awayTeamRaw);
-  const stadiumId = normalizeStadiumId(stadiumRaw);
-  const kickoffAt = normalizeIsoString(dateRaw);
-
-  if (!id || !homeTeamId || !awayTeamId || !stadiumId || !kickoffAt) {
+  if (!id || !stadiumRaw || !localDate) {
     return null;
   }
 
-  const groupValue = raw.group ?? raw.group_id ?? raw.groupId;
-  const groupId =
-    typeof groupValue === "string" && groupValue.trim()
-      ? slugify(groupValue)
+  const homeTeamId = homeTeamName
+    ? slugify(homeTeamName)
+    : homeTeamIdFallback
+      ? slugify(homeTeamIdFallback)
+      : null;
+  const awayTeamId = awayTeamName
+    ? slugify(awayTeamName)
+    : awayTeamIdFallback
+      ? slugify(awayTeamIdFallback)
       : null;
 
-  const stage = groupId ? "group" : normalizeStage(raw.stage ?? raw.phase);
+  if (!homeTeamId || !awayTeamId) {
+    return null;
+  }
 
-  const scoreHome = readNumber(raw, [
-    "home_score",
-    "homeScore",
-    "score_home",
-    "team1_score"
-  ]);
-  const scoreAway = readNumber(raw, [
-    "away_score",
-    "awayScore",
-    "score_away",
-    "team2_score"
-  ]);
-  const minute = readNumber(raw, ["minute", "match_minute", "elapsed"]);
+  const stadiumId = /^\d+$/.test(stadiumRaw) ? `stadium-${stadiumRaw}` : slugify(stadiumRaw);
+  const groupId = normalizeGroupId(groupValue);
+  const stage = typeValue ? normalizeStage(typeValue) : "group";
+  const stadiumTimezone = getStadiumTimezone(stadiumId);
+  const kickoffAt = parseWorldcupLocalDateToIso(localDate, stadiumTimezone) ?? localDate;
+  const { status, minute } = normalizeWorldcupStatus(raw);
+  const scoreHomeRaw = readNumber(raw, ["home_score", "homeScore", "score_home"]);
+  const scoreAwayRaw = readNumber(raw, ["away_score", "awayScore", "score_away"]);
+  const isScoreVisible = status === "live" || status === "finished";
 
   return {
     id: slugify(id),
@@ -234,10 +319,10 @@ export function normalizeWorldcupMatch(raw: WorldcupApiMatch): Match | null {
     awayTeamId,
     stadiumId,
     kickoffAt,
-    status: normalizeStatus(raw.status ?? raw.state),
+    status,
     score: {
-      home: scoreHome,
-      away: scoreAway
+      home: isScoreVisible ? scoreHomeRaw : null,
+      away: isScoreVisible ? scoreAwayRaw : null
     },
     minute,
     lastUpdatedAt: new Date().toISOString()

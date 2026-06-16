@@ -1,5 +1,5 @@
-import { differenceInSeconds, differenceInMinutes } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
+import { parse, differenceInSeconds, differenceInMinutes } from "date-fns";
+import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 
 export function formatMatchTime(
   isoDate: string,
@@ -109,6 +109,27 @@ export function formatShortTime(isoDate: string): string {
     return formatInTimeZone(date, Intl.DateTimeFormat().resolvedOptions().timeZone, "HH:mm");
   } catch {
     return "--:--";
+  }
+}
+
+export function parseWorldcupLocalDateToIso(
+  localDate: string,
+  stadiumTimezone?: string
+): string | null {
+  try {
+    const parsed = parse(localDate, "MM/dd/yyyy HH:mm", new Date());
+
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    const utcDate = stadiumTimezone
+      ? fromZonedTime(parsed, stadiumTimezone)
+      : parsed;
+
+    return utcDate.toISOString();
+  } catch {
+    return null;
   }
 }
 

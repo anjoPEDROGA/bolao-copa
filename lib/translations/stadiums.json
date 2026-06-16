@@ -1,4 +1,24 @@
 {
+  "stadium-12": {
+    "name": "Estádio 12",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-13": {
+    "name": "Estádio 13",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-14": {
+    "name": "Estádio 14",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-15": {
+    "name": "Estádio 15",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
   "metlife-stadium": {
     "name": "MetLife Stadium",
     "city": "Nova York/Nova Jersey",
