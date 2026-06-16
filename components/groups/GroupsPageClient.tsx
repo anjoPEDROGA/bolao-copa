@@ -12,6 +12,9 @@ import { compareIsoDateAsc, isSameUserLocalDay } from "@/lib/datetime";
 import { GroupSection } from "@/components/groups/GroupSection";
 import { useGroupStandings } from "@/hooks/useGroupStandings";
 import { normalizeGroupKey } from "@/lib/groups/groupIds";
+import { NextMatchHero } from "@/components/groups/NextMatchHero";
+import { TodayMatchesList } from "@/components/groups/TodayMatchesList";
+import { MatchSummaryCard } from "@/components/groups/MatchSummaryCards";
 
 export function GroupsPageClient() {
   const [activeFilter, setActiveFilter] = useState<MatchFilter>("all");
@@ -88,6 +91,20 @@ export function GroupsPageClient() {
   const firstGroupId = groups[0]?.id ?? null;
   const firstGroupMatches = firstGroupId ? matchesByGroupId[firstGroupId] ?? [] : [];
 
+  const orderedGroupMatches = useMemo(() => {
+    return [...groupMatches].sort((left, right) =>
+      compareIsoDateAsc(left.kickoffAt, right.kickoffAt)
+    );
+  }, [groupMatches]);
+
+  const nextMatch = useMemo(() => {
+    return orderedGroupMatches.find((match) => Date.parse(match.kickoffAt) > Date.now()) ?? null;
+  }, [orderedGroupMatches]);
+
+  const liveCount = groupMatches.filter((match) => match.status === "live").length;
+  const finishedCount = groupMatches.filter((match) => match.status === "finished").length;
+  const scheduledCount = groupMatches.filter((match) => match.status === "scheduled").length;
+
   const sourceLabel =
     source === "worldcup"
       ? "Fonte: API pública worldcup2026"
@@ -109,6 +126,16 @@ export function GroupsPageClient() {
         </section>
 
         <UserOnboarding />
+
+        <section className="grid gap-3 md:grid-cols-3">
+          <MatchSummaryCard label="Ao Vivo" tone="live" value={liveCount} />
+          <MatchSummaryCard label="Encerrados" tone="finished" value={finishedCount} />
+          <MatchSummaryCard label="Agendados" tone="scheduled" value={scheduledCount} />
+        </section>
+
+        <NextMatchHero match={nextMatch} />
+
+        <TodayMatchesList matches={groupMatches} />
 
         {isError ? (
           <Banner variant="danger">
