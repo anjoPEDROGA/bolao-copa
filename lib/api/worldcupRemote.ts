@@ -22,16 +22,61 @@ function getWorldcupApiBaseUrl(): string {
   );
 }
 
+function joinWorldcupUrl(path: string): string {
+  const baseUrl = getWorldcupApiBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${baseUrl}${normalizedPath}`;
+}
+
+function formatRemoteFetchError(
+  error: unknown,
+  url: string,
+  response?: Response,
+  responseText?: string
+): Error {
+  const errorName = error instanceof Error ? error.name : "Error";
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const statusPart = typeof response?.status === "number" ? ` status=${response.status}` : "";
+  const shortBody =
+    responseText && responseText.trim()
+      ? ` body=${responseText.trim().slice(0, 160)}`
+      : "";
+
+  return new Error(
+    `[worldcupRemote] ${errorName}: ${errorMessage} url=${url}${statusPart}${shortBody}`
+  );
+}
+
 async function fetchRemoteJson<T>(path: string, cacheMode: RequestCache = "no-store"): Promise<T> {
-  const response = await fetch(`${getWorldcupApiBaseUrl()}${path}`, {
-    cache: cacheMode
-  });
+  const url = joinWorldcupUrl(path);
 
-  if (!response.ok) {
-    throw new Error(`Worldcup API error: ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      cache: cacheMode,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "bolao-copa/1.0"
+      }
+    });
+
+    if (!response.ok) {
+      const responseText = await response.text().catch(() => "");
+      throw formatRemoteFetchError(
+        new Error(`Worldcup API error: ${response.status}`),
+        url,
+        response,
+        responseText
+      );
+    }
+
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("[worldcupRemote]")) {
+      throw error;
+    }
+
+    throw formatRemoteFetchError(error, url);
   }
-
-  return (await response.json()) as T;
 }
 
 function extractArrayPayload(value: unknown): unknown[] {

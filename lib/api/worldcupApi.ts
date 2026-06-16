@@ -63,8 +63,26 @@ function extractArrayPayload(value: unknown): unknown[] {
   return [];
 }
 
+function getArrayFromProxyPayload(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (isRecord(value)) {
+    const candidates = [value.matches, value.data, value.games];
+
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return extractArrayPayload(value);
+}
+
 function normalizeMatchesPayload(value: unknown): Match[] {
-  return extractArrayPayload(value)
+  return getArrayFromProxyPayload(value)
     .map((item) => normalizeWorldcupMatch(item as WorldcupApiMatch))
     .filter((item): item is Match => item !== null);
 }
@@ -94,7 +112,16 @@ function normalizeStadiumsPayload(
 
 export async function fetchWorldcupMatches(): Promise<WorldcupProxyResult<Match[]>> {
   const payload = await fetchProxyJson<unknown>("/games");
-  const data = normalizeMatchesPayload(payload.data ?? payload);
+  const raw = payload as unknown;
+  const rawItems = getArrayFromProxyPayload(raw);
+  const data = normalizeMatchesPayload(raw);
+
+  if (rawItems.length > 0 && data.length === 0) {
+    console.warn("[worldcup/proxy] matches payload contained items but no match normalized");
+  } else if (rawItems.length === 0) {
+    console.warn("[worldcup/proxy] matches payload returned no arrays");
+  }
+
   return {
     source: data.length > 0 ? "proxy" : "empty",
     data,

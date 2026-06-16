@@ -267,16 +267,32 @@ function normalizeGroupId(value: unknown): string | null {
   return trimmed.startsWith("group-") ? trimmed : `group-${trimmed}`;
 }
 
+function normalizeTeamIdentifier(
+  raw: Record<string, unknown>,
+  primaryKeys: string[],
+  fallbackKeys: string[]
+): string | null {
+  const primary = readString(raw, primaryKeys);
+  if (primary) {
+    return slugify(primary);
+  }
+
+  const fallback = readString(raw, fallbackKeys);
+  if (fallback) {
+    return slugify(fallback);
+  }
+
+  return null;
+}
+
 export function normalizeWorldcupMatch(raw: WorldcupApiMatch): Match | null {
   if (!isRecord(raw)) {
     return null;
   }
 
   const id = readString(raw, ["id", "_id"]);
-  const homeTeamName = readString(raw, ["home_team_name_en", "home_team", "homeTeam"]);
-  const awayTeamName = readString(raw, ["away_team_name_en", "away_team", "awayTeam"]);
-  const homeTeamIdFallback = readString(raw, ["home_team_id"]);
-  const awayTeamIdFallback = readString(raw, ["away_team_id"]);
+  const homeTeamIdFallback = readString(raw, ["home_team_id", "homeTeamId"]);
+  const awayTeamIdFallback = readString(raw, ["away_team_id", "awayTeamId"]);
   const stadiumRaw = readString(raw, ["stadium_id", "stadiumId", "stadium"]);
   const groupValue = readString(raw, ["group"]);
   const typeValue = readString(raw, ["type"]);
@@ -286,16 +302,18 @@ export function normalizeWorldcupMatch(raw: WorldcupApiMatch): Match | null {
     return null;
   }
 
-  const homeTeamId = homeTeamName
-    ? slugify(homeTeamName)
-    : homeTeamIdFallback
-      ? slugify(homeTeamIdFallback)
-      : null;
-  const awayTeamId = awayTeamName
-    ? slugify(awayTeamName)
-    : awayTeamIdFallback
-      ? slugify(awayTeamIdFallback)
-      : null;
+  const homeTeamId =
+    normalizeTeamIdentifier(
+      raw,
+      ["home_team_name_en", "home_team", "homeTeam", "home_team_label"],
+      ["home_team_id"]
+    ) ?? (homeTeamIdFallback ? slugify(homeTeamIdFallback) : null);
+  const awayTeamId =
+    normalizeTeamIdentifier(
+      raw,
+      ["away_team_name_en", "away_team", "awayTeam", "away_team_label"],
+      ["away_team_id"]
+    ) ?? (awayTeamIdFallback ? slugify(awayTeamIdFallback) : null);
 
   if (!homeTeamId || !awayTeamId) {
     return null;
