@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/grupos", label: "Grupos" },
+  { href: "/times", label: "Times" },
   { href: "/mata-mata", label: "Mata-mata" },
   { href: "/pdf-test", label: "PDF Teste" },
   { href: "/admin", label: "Admin" }
@@ -17,7 +18,9 @@ export function MainNav() {
     <nav className="border-b border-white/10 bg-[#0b1120]/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-3">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            pathname === item.href ||
+            (item.href === "/times" && pathname.startsWith("/times/"));
 
           return (
             <Link
