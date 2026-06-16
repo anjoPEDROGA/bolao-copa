@@ -24,8 +24,23 @@ const statusClasses: Record<MatchStatus, string> = {
 export function Badge({ status, className = "" }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium tracking-wide ${statusClasses[status]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-wide ${statusClasses[status]} ${
+        status === "live" ? "animate-pulse" : ""
+      } ${className}`}
     >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          status === "live"
+            ? "bg-red-300"
+            : status === "finished"
+              ? "bg-emerald-300"
+              : status === "postponed"
+                ? "bg-amber-300"
+                : status === "cancelled"
+                  ? "bg-rose-300"
+                  : "bg-slate-300"
+        }`}
+      />
       {statusLabel[status]}
     </span>
   );
