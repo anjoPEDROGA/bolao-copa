@@ -1,0 +1,77 @@
+{
+  "metlife-stadium": {
+    "name": "MetLife Stadium",
+    "city": "Nova York/Nova Jersey",
+    "country": "Estados Unidos"
+  },
+  "at-t-stadium": {
+    "name": "AT&T Stadium",
+    "city": "Dallas",
+    "country": "Estados Unidos"
+  },
+  "sofi-stadium": {
+    "name": "SoFi Stadium",
+    "city": "Los Angeles",
+    "country": "Estados Unidos"
+  },
+  "hard-rock-stadium": {
+    "name": "Hard Rock Stadium",
+    "city": "Miami",
+    "country": "Estados Unidos"
+  },
+  "mercedes-benz-stadium": {
+    "name": "Mercedes-Benz Stadium",
+    "city": "Atlanta",
+    "country": "Estados Unidos"
+  },
+  "gillette-stadium": {
+    "name": "Gillette Stadium",
+    "city": "Foxborough",
+    "country": "Estados Unidos"
+  },
+  "nrg-stadium": {
+    "name": "NRG Stadium",
+    "city": "Houston",
+    "country": "Estados Unidos"
+  },
+  "lumen-field": {
+    "name": "Lumen Field",
+    "city": "Seattle",
+    "country": "Estados Unidos"
+  },
+  "levi-stadium": {
+    "name": "Levi's Stadium",
+    "city": "Santa Clara",
+    "country": "Estados Unidos"
+  },
+  "lincoln-financial-field": {
+    "name": "Lincoln Financial Field",
+    "city": "Filadélfia",
+    "country": "Estados Unidos"
+  },
+  "bmo-field": {
+    "name": "BMO Field",
+    "city": "Toronto",
+    "country": "Canadá"
+  },
+  "bc-place": {
+    "name": "BC Place",
+    "city": "Vancouver",
+    "country": "Canadá"
+  },
+  "estadio-azteca": {
+    "name": "Estadio Azteca",
+    "city": "Cidade do México",
+    "country": "México"
+  },
+  "estadio-bbva": {
+    "name": "Estadio BBVA",
+    "city": "Monterrey",
+    "country": "México"
+  },
+  "estadio-akron": {
+    "name": "Estadio Akron",
+    "city": "Guadalajara",
+    "country": "México"
+  }
+}

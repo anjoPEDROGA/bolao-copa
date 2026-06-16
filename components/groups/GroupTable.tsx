@@ -1,0 +1,68 @@
+import type { Standing } from "@/types";
+import { getTeamName } from "@/lib/translations";
+
+type GroupTableProps = {
+  standings: Standing[];
+  favoriteTeamIds?: string[];
+  className?: string;
+};
+
+export function GroupTable({
+  standings,
+  favoriteTeamIds = [],
+  className = ""
+}: GroupTableProps) {
+  if (standings.length === 0) {
+    return (
+      <div
+        className={`rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 ${className}`}
+      >
+        Classificação ainda indisponível.
+      </div>
+    );
+  }
+
+  return (
+    <div className={`overflow-hidden rounded-2xl border border-white/10 bg-[#0f1727] ${className}`}>
+      <div className="grid grid-cols-[2.2rem_1fr_repeat(9,minmax(2.2rem,auto))] gap-2 border-b border-white/5 px-4 py-3 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+        <span>Pos</span>
+        <span>Seleção</span>
+        <span>J</span>
+        <span>V</span>
+        <span>E</span>
+        <span>D</span>
+        <span>GP</span>
+        <span>GC</span>
+        <span>SG</span>
+        <span>Pts</span>
+      </div>
+
+      <div className="divide-y divide-white/5">
+        {standings.map((standing, index) => {
+          const isPodium = index < 2;
+          const isFavorite = favoriteTeamIds.includes(standing.teamId);
+
+          return (
+            <div
+              key={standing.teamId}
+              className={`grid grid-cols-[2.2rem_1fr_repeat(9,minmax(2.2rem,auto))] gap-2 px-4 py-3 text-sm ${
+                isFavorite ? "bg-sky-300/5 text-sky-50" : "text-slate-200"
+              } ${isPodium ? "ring-1 ring-emerald-400/10" : ""}`}
+            >
+              <span className="font-semibold text-slate-400">{index + 1}</span>
+              <span className="font-medium">{getTeamName(standing.teamId)}</span>
+              <span>{standing.played}</span>
+              <span>{standing.won}</span>
+              <span>{standing.drawn}</span>
+              <span>{standing.lost}</span>
+              <span>{standing.goalsFor}</span>
+              <span>{standing.goalsAgainst}</span>
+              <span>{standing.goalDifference}</span>
+              <span className="font-semibold text-white">{standing.points}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
