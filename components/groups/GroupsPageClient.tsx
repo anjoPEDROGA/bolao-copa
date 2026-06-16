@@ -11,6 +11,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { compareIsoDateAsc, isSameUserLocalDay } from "@/lib/datetime";
 import { GroupSection } from "@/components/groups/GroupSection";
 import { useGroupStandings } from "@/hooks/useGroupStandings";
+import { normalizeGroupKey } from "@/lib/groups/groupIds";
 
 export function GroupsPageClient() {
   const [activeFilter, setActiveFilter] = useState<MatchFilter>("all");
@@ -27,6 +28,10 @@ export function GroupsPageClient() {
   } =
     useGroupStandings();
   const { profile } = useUserProfile();
+  const firstGroupId = groups[0]?.id ?? null;
+  const firstGroupMatches = firstGroupId
+    ? groupMatches.filter((match) => normalizeGroupKey(match.groupId) === normalizeGroupKey(firstGroupId))
+    : [];
 
   const counts = useMemo(() => {
     const today = groupMatches.filter((match) => isSameUserLocalDay(match.kickoffAt));
@@ -39,7 +44,7 @@ export function GroupsPageClient() {
     };
   }, [groupMatches]);
 
-  const filteredMatches = useMemo(() => {
+  const visibleMatches = useMemo(() => {
     const ordered = [...groupMatches].sort((left, right) =>
       compareIsoDateAsc(left.kickoffAt, right.kickoffAt)
     );
@@ -66,18 +71,30 @@ export function GroupsPageClient() {
         : "Nenhum dado disponível no momento";
 
   const filteredGroups = useMemo(() => {
-    if (filteredMatches.length === 0) {
+    if (visibleMatches.length === 0) {
       return groups;
     }
 
     const visibleGroupIds = new Set(
-      filteredMatches
+      visibleMatches
         .map((match) => match.groupId)
         .filter((groupId): groupId is string => typeof groupId === "string")
     );
 
     return groups.filter((group) => visibleGroupIds.has(group.id));
-  }, [filteredMatches, groups]);
+  }, [groups, visibleMatches]);
+
+  const matchesByGroupId = useMemo(() => {
+    return groups.reduce<Record<string, typeof visibleMatches>>((accumulator, group) => {
+      const normalizedGroupId = normalizeGroupKey(group.id);
+      accumulator[group.id] = normalizedGroupId
+        ? visibleMatches.filter(
+            (match) => normalizeGroupKey(match.groupId) === normalizedGroupId
+          )
+        : [];
+      return accumulator;
+    }, {});
+  }, [groups, visibleMatches]);
 
   return (
     <main className="page-shell">
@@ -109,12 +126,18 @@ export function GroupsPageClient() {
               <div className="text-right text-xs uppercase tracking-[0.2em] text-slate-400">
                 <p>{sourceLabel}</p>
                 <p>
-                  {groupMatches.length} jogos de grupo · {groupTotal} calculados · {groups.length} grupos
-                </p>
+                {groupMatches.length} jogos de grupo · {groupTotal} calculados · {groups.length} grupos
+              </p>
+              <p>
+                {total} jogos totais na API · {knockoutTotal} mata-mata
+              </p>
+              {process.env.NODE_ENV === "development" ? (
                 <p>
-                  {total} jogos totais na API · {knockoutTotal} mata-mata
+                  debug: firstGroupId={firstGroupId ?? "-"} firstGroupMatches=
+                  {firstGroupMatches.length}
                 </p>
-              </div>
+              ) : null}
+            </div>
             </div>
 
             {filteredGroups.length > 0 ? (
@@ -124,7 +147,7 @@ export function GroupsPageClient() {
                     key={group.id}
                     favoriteTeamIds={profile.favoriteTeamIds}
                     group={group}
-                    matches={filteredMatches}
+                    matches={matchesByGroupId[group.id] ?? []}
                     standings={standingsByGroup[group.id] ?? []}
                   />
                 ))}
@@ -133,7 +156,7 @@ export function GroupsPageClient() {
               <MatchList
                 emptyMessage="Nenhum jogo encontrado para este filtro."
                 favoriteTeamIds={profile.favoriteTeamIds}
-                matches={filteredMatches}
+                matches={visibleMatches}
               />
             )}
           </section>

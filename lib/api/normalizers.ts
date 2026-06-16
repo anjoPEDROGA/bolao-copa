@@ -9,6 +9,7 @@ import type {
   WorldcupApiTeam
 } from "@/types";
 import { parseWorldcupLocalDateToIso } from "@/lib/datetime";
+import { isValidGroupId, normalizeGroupKey } from "@/lib/groups/groupIds";
 import { getStadiumTimezone } from "@/lib/translations";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -88,7 +89,6 @@ export function slugify(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
-const validGroupLetters = new Set(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"]);
 const knockoutGroupTokens = new Set([
   "r32",
   "round-of-32",
@@ -130,12 +130,7 @@ export function isPlaceholderTeamId(teamId: string | null | undefined): boolean 
 }
 
 export function isValidWorldcupGroupId(groupId: string | null | undefined): boolean {
-  if (!groupId) {
-    return false;
-  }
-
-  const normalized = slugify(groupId).replace(/^group-/, "");
-  return validGroupLetters.has(normalized);
+  return isValidGroupId(groupId);
 }
 
 export function isGroupStageMatch(match: Match): boolean {
@@ -143,16 +138,7 @@ export function isGroupStageMatch(match: Match): boolean {
 }
 
 export function normalizeWorldcupGroupId(groupId: string | null | undefined): string | null {
-  if (!groupId) {
-    return null;
-  }
-
-  const normalized = slugify(groupId).replace(/^group-/, "");
-  if (validGroupLetters.has(normalized)) {
-    return `group-${normalized}`;
-  }
-
-  return null;
+  return normalizeGroupKey(groupId);
 }
 
 export function normalizeStatus(value: unknown): MatchStatus {
@@ -361,7 +347,7 @@ function normalizeGroupId(value: unknown): string | null {
     return null;
   }
 
-  if (validGroupLetters.has(normalized)) {
+  if (/^[a-l]$/.test(normalized)) {
     return `group-${normalized}`;
   }
 

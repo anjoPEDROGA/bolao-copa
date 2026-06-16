@@ -2,7 +2,7 @@ import type { Group, Match, Standing } from "@/types";
 import {
   isGroupStageMatch,
   isPlaceholderTeamId,
-  isValidWorldcupGroupId
+  normalizeWorldcupGroupId
 } from "@/lib/api/normalizers";
 
 // Lógica pura de classificação da fase de grupos.
@@ -20,6 +20,41 @@ function isNumericScore(value: number | null | undefined): value is number {
 
 function cloneStanding(standing: Standing): Standing {
   return { ...standing };
+}
+
+function getGroupMatchTeamIds(group: Group, matches: Match[]): string[] {
+  const teamIds = new Set<string>();
+
+  for (const teamId of group.teamIds) {
+    if (!isPlaceholderTeamId(teamId)) {
+      teamIds.add(teamId);
+    }
+  }
+
+  if (teamIds.size > 0) {
+    return Array.from(teamIds);
+  }
+
+  for (const match of matches) {
+    if (!isGroupStageMatch(match)) {
+      continue;
+    }
+
+    const normalizedGroupId = normalizeWorldcupGroupId(match.groupId);
+    if (normalizedGroupId !== normalizeWorldcupGroupId(group.id)) {
+      continue;
+    }
+
+    if (!isPlaceholderTeamId(match.homeTeamId)) {
+      teamIds.add(match.homeTeamId);
+    }
+
+    if (!isPlaceholderTeamId(match.awayTeamId)) {
+      teamIds.add(match.awayTeamId);
+    }
+  }
+
+  return Array.from(teamIds);
 }
 
 function getHeadToHeadSummary(
@@ -148,10 +183,7 @@ export function calculateGroupStandings(
 ): Standing[] {
   const standingsByTeam = new Map<string, Standing>();
 
-  for (const teamId of group.teamIds) {
-    if (isPlaceholderTeamId(teamId)) {
-      continue;
-    }
+  for (const teamId of getGroupMatchTeamIds(group, matches)) {
     standingsByTeam.set(teamId, createEmptyStanding(teamId, group.id));
   }
 
@@ -191,7 +223,7 @@ export function calculateAllGroupStandings(
   matches: Match[]
 ): Record<string, Standing[]> {
   return groups.reduce<Record<string, Standing[]>>((accumulator, group) => {
-    if (!isValidWorldcupGroupId(group.id)) {
+    if (!normalizeWorldcupGroupId(group.id)) {
       accumulator[group.id] = [];
       return accumulator;
     }
