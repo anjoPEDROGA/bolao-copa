@@ -10,5 +10,10 @@ export type ApiSource = "worldcup" | "proxy" | "fallback" | "empty";
 
 export type MatchesResult = {
   matches: import("./match").Match[];
+  data: import("./match").Match[];
   source: ApiSource;
+  total: number;
+  groupTotal: number;
+  knockoutTotal: number;
+  error?: string | null;
 };

@@ -142,6 +142,19 @@ export function isGroupStageMatch(match: Match): boolean {
   return match.stage === "group" && isValidWorldcupGroupId(match.groupId);
 }
 
+export function normalizeWorldcupGroupId(groupId: string | null | undefined): string | null {
+  if (!groupId) {
+    return null;
+  }
+
+  const normalized = slugify(groupId).replace(/^group-/, "");
+  if (validGroupLetters.has(normalized)) {
+    return `group-${normalized}`;
+  }
+
+  return null;
+}
+
 export function normalizeStatus(value: unknown): MatchStatus {
   const normalized =
     typeof value === "string"

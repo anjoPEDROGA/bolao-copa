@@ -19,6 +19,9 @@ export function GroupsPageClient() {
     standingsByGroup,
     groupMatches,
     source,
+    total,
+    groupTotal,
+    knockoutTotal,
     isLoading,
     isError
   } =
@@ -106,7 +109,10 @@ export function GroupsPageClient() {
               <div className="text-right text-xs uppercase tracking-[0.2em] text-slate-400">
                 <p>{sourceLabel}</p>
                 <p>
-                  {groupMatches.length} jogos de grupo · {groups.length} grupos
+                  {groupMatches.length} jogos de grupo · {groupTotal} calculados · {groups.length} grupos
+                </p>
+                <p>
+                  {total} jogos totais na API · {knockoutTotal} mata-mata
                 </p>
               </div>
             </div>

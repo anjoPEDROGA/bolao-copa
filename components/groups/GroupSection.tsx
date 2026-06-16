@@ -1,4 +1,5 @@
 import type { Group, Match, Standing } from "@/types";
+import { normalizeWorldcupGroupId } from "@/lib/api/normalizers";
 import { GroupTable } from "./GroupTable";
 import { MatchList } from "@/components/match/MatchList";
 
@@ -17,7 +18,10 @@ export function GroupSection({
   favoriteTeamIds = [],
   className = ""
 }: GroupSectionProps) {
-  const groupMatches = matches.filter((match) => match.groupId === group.id);
+  const normalizedGroupId = normalizeWorldcupGroupId(group.id) ?? group.id;
+  const groupMatches = matches.filter(
+    (match) => normalizeWorldcupGroupId(match.groupId) === normalizedGroupId
+  );
 
   return (
     <section

@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { calculateAllGroupStandings } from "@/lib/classification/engine";
-import { isGroupStageMatch } from "@/lib/api/normalizers";
+import { isGroupStageMatch, normalizeWorldcupGroupId } from "@/lib/api/normalizers";
 import { staticGroups } from "@/lib/groups/staticGroups";
 import { useGroups } from "@/hooks/useGroups";
 import { useMatches } from "@/hooks/useMatches";
@@ -32,6 +32,9 @@ export function useGroupStandings(): {
   source: ApiSource;
   isLoading: boolean;
   isError: boolean;
+  total: number;
+  groupTotal: number;
+  knockoutTotal: number;
 } {
   const {
     groups: apiGroups,
@@ -43,7 +46,10 @@ export function useGroupStandings(): {
     matches,
     source: matchSource,
     isLoading: matchesLoading,
-    isError: matchesError
+    error: matchesError,
+    total,
+    groupTotal,
+    knockoutTotal
   } = useMatches();
 
   const groups = apiGroups.length > 0 ? apiGroups : staticGroups;
@@ -60,6 +66,20 @@ export function useGroupStandings(): {
     return calculateAllGroupStandings(groups, groupMatches);
   }, [groups, groupMatches, matchesLoading]);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") {
+      return;
+    }
+
+    console.warn("[grupos] matches", {
+      total,
+      groupMatches: groupMatches.length,
+      groups: groups.length,
+      groupIds: groupMatches.slice(0, 5).map((match) => match.groupId),
+      groupsIds: groups.slice(0, 5).map((group) => normalizeWorldcupGroupId(group.id) ?? group.id)
+    });
+  }, [groupMatches, groups, knockoutTotal, total, groupTotal]);
+
   return {
     groups,
     standingsByGroup,
@@ -67,6 +87,9 @@ export function useGroupStandings(): {
     groupMatches,
     source: resolveSource(groupSource, matchSource),
     isLoading: groupsLoading || matchesLoading,
-    isError: groupsError || matchesError
+    isError: groupsError || Boolean(matchesError),
+    total,
+    groupTotal,
+    knockoutTotal
   };
 }
