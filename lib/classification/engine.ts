@@ -1,4 +1,9 @@
 import type { Group, Match, Standing } from "@/types";
+import {
+  isGroupStageMatch,
+  isPlaceholderTeamId,
+  isValidWorldcupGroupId
+} from "@/lib/api/normalizers";
 
 // Lógica pura de classificação da fase de grupos.
 // A regra oficial completa da FIFA para múltiplos times empatados pode ser refinada depois.
@@ -28,9 +33,7 @@ function getHeadToHeadSummary(
 
   for (const match of matches) {
     if (
-      match.status !== "finished" ||
-      match.groupId === null ||
-      match.groupId === undefined ||
+      !isGroupStageMatch(match) ||
       !isNumericScore(match.score.home) ||
       !isNumericScore(match.score.away)
     ) {
@@ -131,7 +134,7 @@ export function createEmptyStanding(
 // Verifica se a partida é uma partida finalizada válida dentro do grupo informado.
 export function isFinishedGroupMatch(match: Match, groupId: string): boolean {
   return (
-    match.status === "finished" &&
+    isGroupStageMatch(match) &&
     match.groupId === groupId &&
     isNumericScore(match.score.home) &&
     isNumericScore(match.score.away)
@@ -146,6 +149,9 @@ export function calculateGroupStandings(
   const standingsByTeam = new Map<string, Standing>();
 
   for (const teamId of group.teamIds) {
+    if (isPlaceholderTeamId(teamId)) {
+      continue;
+    }
     standingsByTeam.set(teamId, createEmptyStanding(teamId, group.id));
   }
 
@@ -185,6 +191,10 @@ export function calculateAllGroupStandings(
   matches: Match[]
 ): Record<string, Standing[]> {
   return groups.reduce<Record<string, Standing[]>>((accumulator, group) => {
+    if (!isValidWorldcupGroupId(group.id)) {
+      accumulator[group.id] = [];
+      return accumulator;
+    }
     accumulator[group.id] = calculateGroupStandings(group, matches);
     return accumulator;
   }, {});

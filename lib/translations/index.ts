@@ -17,8 +17,28 @@ const teamDictionary = teams as TeamDictionary;
 const stadiumDictionary = stadiums as StadiumDictionary;
 const timezoneDictionary = timezones as TimezoneDictionary;
 
+function normalizeKey(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+export function isPlaceholderTeamId(teamId: string): boolean {
+  const normalizedTeamId = normalizeKey(teamId);
+  return (
+    normalizedTeamId === "0" ||
+    normalizedTeamId === "tbd" ||
+    normalizedTeamId === "unknown" ||
+    normalizedTeamId === "to-be-defined" ||
+    normalizedTeamId === "a-definir" ||
+    normalizedTeamId === "definir"
+  );
+}
+
 export function getTeamName(teamId: string): string {
-  const normalizedTeamId = teamId.trim().toLowerCase();
+  if (isPlaceholderTeamId(teamId)) {
+    return "A definir";
+  }
+
+  const normalizedTeamId = normalizeKey(teamId);
   return teamDictionary[normalizedTeamId] ?? teamId;
 }
 
@@ -29,12 +49,12 @@ export function getAvailableTeams(): Array<{ id: string; name: string }> {
 }
 
 export function getStadiumInfo(stadiumId: string): StadiumInfo | null {
-  const normalizedStadiumId = stadiumId.trim().toLowerCase();
+  const normalizedStadiumId = normalizeKey(stadiumId);
   return stadiumDictionary[normalizedStadiumId] ?? null;
 }
 
 export function getStadiumTimezone(stadiumId: string): string {
-  const normalizedStadiumId = stadiumId.trim().toLowerCase();
+  const normalizedStadiumId = normalizeKey(stadiumId);
   return timezoneDictionary[normalizedStadiumId] ?? "UTC";
 }
 

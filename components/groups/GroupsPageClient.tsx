@@ -14,23 +14,30 @@ import { useGroupStandings } from "@/hooks/useGroupStandings";
 
 export function GroupsPageClient() {
   const [activeFilter, setActiveFilter] = useState<MatchFilter>("all");
-  const { groups, standingsByGroup, matches, source, isLoading, isError } =
+  const {
+    groups,
+    standingsByGroup,
+    groupMatches,
+    source,
+    isLoading,
+    isError
+  } =
     useGroupStandings();
   const { profile } = useUserProfile();
 
   const counts = useMemo(() => {
-    const today = matches.filter((match) => isSameUserLocalDay(match.kickoffAt));
+    const today = groupMatches.filter((match) => isSameUserLocalDay(match.kickoffAt));
 
     return {
-      all: matches.length,
+      all: groupMatches.length,
       today: today.length,
-      live: matches.filter((match) => match.status === "live").length,
-      finished: matches.filter((match) => match.status === "finished").length
+      live: groupMatches.filter((match) => match.status === "live").length,
+      finished: groupMatches.filter((match) => match.status === "finished").length
     };
-  }, [matches]);
+  }, [groupMatches]);
 
   const filteredMatches = useMemo(() => {
-    const ordered = [...matches].sort((left, right) =>
+    const ordered = [...groupMatches].sort((left, right) =>
       compareIsoDateAsc(left.kickoffAt, right.kickoffAt)
     );
 
@@ -44,7 +51,7 @@ export function GroupsPageClient() {
       default:
         return ordered;
     }
-  }, [activeFilter, matches]);
+  }, [activeFilter, groupMatches]);
 
   const sourceLabel =
     source === "worldcup"
@@ -99,7 +106,7 @@ export function GroupsPageClient() {
               <div className="text-right text-xs uppercase tracking-[0.2em] text-slate-400">
                 <p>{sourceLabel}</p>
                 <p>
-                  {matches.length} jogos · {groups.length} grupos
+                  {groupMatches.length} jogos de grupo · {groups.length} grupos
                 </p>
               </div>
             </div>

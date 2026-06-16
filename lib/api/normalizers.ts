@@ -88,6 +88,60 @@ export function slugify(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
+const validGroupLetters = new Set(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"]);
+const knockoutGroupTokens = new Set([
+  "r32",
+  "round-of-32",
+  "roundof32",
+  "32",
+  "r16",
+  "round-of-16",
+  "roundof16",
+  "16",
+  "qf",
+  "quarter",
+  "quarter-final",
+  "quarterfinal",
+  "sf",
+  "semi",
+  "semi-final",
+  "semifinal",
+  "3rd",
+  "third",
+  "third-place",
+  "thirdplace",
+  "final"
+]);
+
+export function isPlaceholderTeamId(teamId: string | null | undefined): boolean {
+  if (!teamId) {
+    return true;
+  }
+
+  const normalized = slugify(teamId);
+  return (
+    normalized === "0" ||
+    normalized === "tbd" ||
+    normalized === "unknown" ||
+    normalized === "to-be-defined" ||
+    normalized === "definir" ||
+    normalized === "a-definir"
+  );
+}
+
+export function isValidWorldcupGroupId(groupId: string | null | undefined): boolean {
+  if (!groupId) {
+    return false;
+  }
+
+  const normalized = slugify(groupId).replace(/^group-/, "");
+  return validGroupLetters.has(normalized);
+}
+
+export function isGroupStageMatch(match: Match): boolean {
+  return match.stage === "group" && isValidWorldcupGroupId(match.groupId);
+}
+
 export function normalizeStatus(value: unknown): MatchStatus {
   const normalized =
     typeof value === "string"
@@ -172,6 +226,36 @@ export function normalizeStage(value: unknown): TournamentStage {
       : typeof value === "number"
         ? String(value)
         : "";
+
+  const stripped = normalized.replace(/^group-/, "");
+
+  if (/^[a-l]$/.test(stripped)) {
+    return "group";
+  }
+
+  if (stripped === "r32" || stripped === "round-of-32" || stripped === "roundof32" || stripped === "32") {
+    return "round-of-32";
+  }
+
+  if (stripped === "r16" || stripped === "round-of-16" || stripped === "roundof16" || stripped === "16") {
+    return "round-of-16";
+  }
+
+  if (stripped === "qf" || stripped === "quarter" || stripped === "quarter-final" || stripped === "quarterfinal") {
+    return "quarter-final";
+  }
+
+  if (stripped === "sf" || stripped === "semi" || stripped === "semi-final" || stripped === "semifinal") {
+    return "semi-final";
+  }
+
+  if (stripped === "3rd" || stripped === "third" || stripped === "third-place" || stripped === "thirdplace") {
+    return "third-place";
+  }
+
+  if (stripped === "final") {
+    return "final";
+  }
 
   switch (normalized) {
     case "groups":
@@ -259,12 +343,20 @@ function normalizeGroupId(value: unknown): string | null {
     return null;
   }
 
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed) {
+  const normalized = slugify(value).replace(/^group-/, "");
+  if (!normalized) {
     return null;
   }
 
-  return trimmed.startsWith("group-") ? trimmed : `group-${trimmed}`;
+  if (validGroupLetters.has(normalized)) {
+    return `group-${normalized}`;
+  }
+
+  if (knockoutGroupTokens.has(normalized)) {
+    return null;
+  }
+
+  return null;
 }
 
 function normalizeTeamIdentifier(
@@ -320,8 +412,11 @@ export function normalizeWorldcupMatch(raw: WorldcupApiMatch): Match | null {
   }
 
   const stadiumId = /^\d+$/.test(stadiumRaw) ? `stadium-${stadiumRaw}` : slugify(stadiumRaw);
-  const groupId = normalizeGroupId(groupValue);
-  const stage = typeValue ? normalizeStage(typeValue) : "group";
+  const inferredGroupStage = groupValue ? normalizeStage(groupValue) : "group";
+  const stageSource =
+    inferredGroupStage !== "group" ? groupValue ?? typeValue ?? "group" : typeValue ?? groupValue ?? "group";
+  const stage = normalizeStage(stageSource);
+  const groupId = stage === "group" ? normalizeGroupId(groupValue) : null;
   const stadiumTimezone = getStadiumTimezone(stadiumId);
   const kickoffAt = parseWorldcupLocalDateToIso(localDate, stadiumTimezone) ?? localDate;
   const { status, minute } = normalizeWorldcupStatus(raw);
@@ -354,7 +449,10 @@ function normalizeTeamList(value: unknown): string[] {
 
   return value
     .map((item) => normalizeTeamId(item))
-    .filter((item): item is string => typeof item === "string" && item.length > 0);
+    .filter(
+      (item): item is string =>
+        typeof item === "string" && item.length > 0 && !isPlaceholderTeamId(item)
+    );
 }
 
 export function normalizeWorldcupGroup(raw: WorldcupApiGroup): Group | null {

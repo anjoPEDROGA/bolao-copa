@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { calculateAllGroupStandings } from "@/lib/classification/engine";
+import { isGroupStageMatch } from "@/lib/api/normalizers";
 import { staticGroups } from "@/lib/groups/staticGroups";
 import { useGroups } from "@/hooks/useGroups";
 import { useMatches } from "@/hooks/useMatches";
@@ -27,6 +28,7 @@ export function useGroupStandings(): {
   groups: Group[];
   standingsByGroup: Record<string, Standing[]>;
   matches: Match[];
+  groupMatches: Match[];
   source: ApiSource;
   isLoading: boolean;
   isError: boolean;
@@ -45,19 +47,24 @@ export function useGroupStandings(): {
   } = useMatches();
 
   const groups = apiGroups.length > 0 ? apiGroups : staticGroups;
+  const groupMatches = useMemo(
+    () => matches.filter((match) => isGroupStageMatch(match)),
+    [matches]
+  );
 
   const standingsByGroup = useMemo(() => {
     if (matchesLoading) {
       return {};
     }
 
-    return calculateAllGroupStandings(groups, matches);
-  }, [groups, matches, matchesLoading]);
+    return calculateAllGroupStandings(groups, groupMatches);
+  }, [groups, groupMatches, matchesLoading]);
 
   return {
     groups,
     standingsByGroup,
     matches,
+    groupMatches,
     source: resolveSource(groupSource, matchSource),
     isLoading: groupsLoading || matchesLoading,
     isError: groupsError || matchesError
