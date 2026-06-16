@@ -25,13 +25,8 @@ export function GroupsPageClient() {
     knockoutTotal,
     isLoading,
     isError
-  } =
-    useGroupStandings();
+  } = useGroupStandings();
   const { profile } = useUserProfile();
-  const firstGroupId = groups[0]?.id ?? null;
-  const firstGroupMatches = firstGroupId
-    ? groupMatches.filter((match) => normalizeGroupKey(match.groupId) === normalizeGroupKey(firstGroupId))
-    : [];
 
   const counts = useMemo(() => {
     const today = groupMatches.filter((match) => isSameUserLocalDay(match.kickoffAt));
@@ -60,15 +55,6 @@ export function GroupsPageClient() {
         return ordered;
     }
   }, [activeFilter, groupMatches]);
-
-  const sourceLabel =
-    source === "worldcup"
-      ? "Fonte: API pública worldcup2026"
-      : source === "proxy"
-        ? "Fonte: proxy interno"
-      : source === "fallback"
-        ? "Fonte: fallback Firestore"
-        : "Nenhum dado disponível no momento";
 
   const filteredGroups = useMemo(() => {
     if (visibleMatches.length === 0) {
@@ -99,13 +85,25 @@ export function GroupsPageClient() {
     }, {});
   }, [groups, visibleMatches]);
 
+  const firstGroupId = groups[0]?.id ?? null;
+  const firstGroupMatches = firstGroupId ? matchesByGroupId[firstGroupId] ?? [] : [];
+
+  const sourceLabel =
+    source === "worldcup"
+      ? "Fonte: API pública worldcup2026"
+      : source === "proxy"
+        ? "Fonte: proxy interno"
+        : source === "fallback"
+          ? "Fonte: fallback Firestore"
+          : "Nenhum dado disponível no momento";
+
   return (
     <main className="page-shell">
-      <MotionPage className="w-full max-w-5xl space-y-6">
-        <section className="page-card space-y-3">
+      <MotionPage className="w-full max-w-5xl space-y-4">
+        <section className="page-card space-y-2">
           <p className="page-kicker">Bolão Copa 2026</p>
-          <h1 className="page-title">Fase de Grupos</h1>
-          <p className="page-copy">
+          <h1 className="page-title text-3xl">Fase de Grupos</h1>
+          <p className="page-copy text-sm">
             Acompanhe os jogos, horários e favoritos da Copa 2026.
           </p>
         </section>
@@ -120,31 +118,31 @@ export function GroupsPageClient() {
 
         {!isLoading ? (
           <section className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-white/10 bg-[#0f1727]/80 p-3">
               <MatchFilters
                 activeFilter={activeFilter}
                 counts={counts}
                 onChange={setActiveFilter}
               />
-              <div className="text-right text-xs uppercase tracking-[0.2em] text-slate-400">
+
+              <div className="text-right text-[11px] uppercase tracking-[0.18em] text-slate-400">
                 <p>{sourceLabel}</p>
                 <p>
-                {groupMatches.length} jogos de grupo · {groupTotal} calculados · {groups.length} grupos
-              </p>
-              <p>
-                {total} jogos totais na API · {knockoutTotal} mata-mata
-              </p>
-              {process.env.NODE_ENV === "development" ? (
-                <p>
-                  debug: firstGroupId={firstGroupId ?? "-"} firstGroupMatches=
-                  {firstGroupMatches.length}
+                  {groupMatches.length} jogos de grupo · {groupTotal} calculados · {groups.length} grupos
                 </p>
-              ) : null}
-            </div>
+                <p>
+                  {total} jogos totais na API · {knockoutTotal} mata-mata
+                </p>
+                {process.env.NODE_ENV === "development" ? (
+                  <p className="normal-case tracking-normal">
+                    debug: firstGroupId={firstGroupId ?? "-"} firstGroupMatches={firstGroupMatches.length}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             {filteredGroups.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredGroups.map((group) => (
                   <GroupSection
                     key={group.id}
@@ -164,7 +162,7 @@ export function GroupsPageClient() {
             )}
           </section>
         ) : (
-          <section className="grid gap-4">
+          <section className="grid gap-3">
             <MatchCardSkeleton />
             <MatchCardSkeleton />
             <MatchCardSkeleton />

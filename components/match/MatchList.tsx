@@ -16,26 +16,22 @@ export function MatchList({
 }: MatchListProps) {
   if (matches.length === 0) {
     return (
-      <div className={`rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300 ${className}`}>
+      <div
+        className={`rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 ${className}`}
+      >
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className={`grid gap-4 ${className}`}>
+    <div className={`grid gap-2 ${className}`}>
       {matches.map((match) => {
         const isFavorite =
           favoriteTeamIds.includes(match.homeTeamId) ||
           favoriteTeamIds.includes(match.awayTeamId);
 
-        return (
-          <MatchCard
-            key={match.id}
-            isFavorite={isFavorite}
-            match={match}
-          />
-        );
+        return <MatchCard key={match.id} isFavorite={isFavorite} match={match} />;
       })}
     </div>
   );

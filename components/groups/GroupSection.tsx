@@ -17,17 +17,15 @@ export function GroupSection({
   favoriteTeamIds = [],
   className = ""
 }: GroupSectionProps) {
-  const groupMatches = matches;
-
   return (
     <section
-      className={`space-y-4 rounded-3xl border border-white/10 bg-white/3 p-4 ${className}`}
+      className={`space-y-3 rounded-2xl border border-white/10 bg-[#0f1727]/95 p-3 ${className}`}
     >
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.2em] text-sky-300/80">
+      <div className="space-y-0.5">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-sky-300/80">
           Grupo
         </p>
-        <h2 className="text-2xl font-semibold text-white">{group.name}</h2>
+        <h2 className="text-xl font-semibold text-white">{group.name}</h2>
       </div>
 
       <GroupTable favoriteTeamIds={favoriteTeamIds} standings={standings} />
@@ -35,7 +33,7 @@ export function GroupSection({
       <MatchList
         emptyMessage="Jogos deste grupo ainda não disponíveis."
         favoriteTeamIds={favoriteTeamIds}
-        matches={groupMatches}
+        matches={matches}
       />
     </section>
   );
