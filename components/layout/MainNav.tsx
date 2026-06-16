@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { GlobalSearchBar } from "@/components/search/GlobalSearchBar";
 
 const navItems = [
   { href: "/grupos", label: "Grupos" },
@@ -16,26 +17,32 @@ export function MainNav() {
 
   return (
     <nav className="border-b border-white/10 bg-[#0b1120]/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-3">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href === "/times" && pathname.startsWith("/times/"));
+      <div className="mx-auto w-full max-w-6xl px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href === "/times" && pathname.startsWith("/times/"));
 
-          return (
-            <Link
-              key={item.href}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                isActive
-                  ? "bg-sky-300/15 text-sky-100 ring-1 ring-sky-300/25"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
-              }`}
-              href={item.href}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.href}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-sky-300/15 text-sky-100 ring-1 ring-sky-300/25"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
+                }`}
+                href={item.href}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mt-3">
+          <GlobalSearchBar />
+        </div>
       </div>
     </nav>
   );

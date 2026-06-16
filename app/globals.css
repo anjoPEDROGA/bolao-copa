@@ -19,6 +19,7 @@ body {
     radial-gradient(circle at top, rgba(125, 211, 252, 0.12), transparent 30%),
     linear-gradient(180deg, #0b1120 0%, #070b14 100%);
   color: var(--foreground);
+  scroll-behavior: smooth;
 }
 
 body {
