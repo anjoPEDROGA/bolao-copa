@@ -2,16 +2,12 @@ import type {
   Group,
   Match,
   MatchesResult,
-  WorldcupApiGroup,
-  WorldcupApiMatch,
   WorldcupApiStadium,
   WorldcupApiTeam
 } from "@/types";
 import {
   isRecord,
   isGroupStageMatch,
-  normalizeWorldcupGroup,
-  normalizeWorldcupMatch,
   normalizeWorldcupStadium,
   normalizeWorldcupTeam
 } from "./normalizers";
@@ -105,20 +101,26 @@ function pickFirstNonEmptyArray(...values: unknown[]): unknown[] {
   return [];
 }
 
+// The proxy (/api/worldcup/games) already returns fully-normalized Match objects.
+// Re-running normalizeWorldcupMatch on them would lose fields like groupId (stored as
+// "groupId" in the normalized object, but the normalizer reads "group" from the raw API).
+// So we just cast the array items directly.
 function normalizeMatchesPayload(value: unknown): Match[] {
   return pickFirstNonEmptyArray(
     isRecord(value) ? (value as MatchesProxyResponse).matches : null,
     isRecord(value) ? (value as MatchesProxyResponse).data : null,
     isRecord(value) ? (value as MatchesProxyResponse).games : null
-  )
-    .map((item) => normalizeWorldcupMatch(item as WorldcupApiMatch))
-    .filter((item): item is Match => item !== null);
+  ).filter((item): item is Match => isRecord(item) && typeof (item as Match).id === "string");
 }
 
+// Same reasoning: /api/worldcup/groups already returns normalized Group objects.
 function normalizeGroupsPayload(value: unknown): Group[] {
-  return extractArrayPayload(value)
-    .map((item) => normalizeWorldcupGroup(item as WorldcupApiGroup))
-    .filter((item): item is Group => item !== null);
+  return extractArrayPayload(value).filter(
+    (item): item is Group =>
+      isRecord(item) &&
+      typeof (item as Group).id === "string" &&
+      typeof (item as Group).name === "string"
+  );
 }
 
 function normalizeTeamsPayload(value: unknown): Array<{ id: string; name: string }> {

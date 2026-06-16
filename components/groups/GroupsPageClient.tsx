@@ -75,13 +75,16 @@ export function GroupsPageClient() {
       return groups;
     }
 
-    const visibleGroupIds = new Set(
+    const visibleGroupKeys = new Set(
       visibleMatches
-        .map((match) => match.groupId)
-        .filter((groupId): groupId is string => typeof groupId === "string")
+        .map((match) => normalizeGroupKey(match.groupId))
+        .filter((key): key is string => key !== null)
     );
 
-    return groups.filter((group) => visibleGroupIds.has(group.id));
+    return groups.filter((group) => {
+      const key = normalizeGroupKey(group.id);
+      return key !== null && visibleGroupKeys.has(key);
+    });
   }, [groups, visibleMatches]);
 
   const matchesByGroupId = useMemo(() => {
