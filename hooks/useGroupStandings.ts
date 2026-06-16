@@ -12,6 +12,10 @@ function resolveSource(groupSource: ApiSource, matchSource: ApiSource): ApiSourc
     return "worldcup";
   }
 
+  if (groupSource === "proxy" || matchSource === "proxy") {
+    return "proxy";
+  }
+
   if (groupSource === "fallback" || matchSource === "fallback") {
     return "fallback";
   }

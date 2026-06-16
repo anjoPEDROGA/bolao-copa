@@ -1,4 +1,59 @@
 {
+  "stadium-1": {
+    "name": "Estádio 1",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-2": {
+    "name": "Estádio 2",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-3": {
+    "name": "Estádio 3",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-4": {
+    "name": "Estádio 4",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-5": {
+    "name": "Estádio 5",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-6": {
+    "name": "Estádio 6",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-7": {
+    "name": "Estádio 7",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-8": {
+    "name": "Estádio 8",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-9": {
+    "name": "Estádio 9",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-10": {
+    "name": "Estádio 10",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-11": {
+    "name": "Estádio 11",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
   "stadium-12": {
     "name": "Estádio 12",
     "city": "Cidade a definir",
@@ -16,6 +71,11 @@
   },
   "stadium-15": {
     "name": "Estádio 15",
+    "city": "Cidade a definir",
+    "country": "A definir"
+  },
+  "stadium-16": {
+    "name": "Estádio 16",
     "city": "Cidade a definir",
     "country": "A definir"
   },

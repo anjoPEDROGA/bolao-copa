@@ -49,6 +49,8 @@ export function GroupsPageClient() {
   const sourceLabel =
     source === "worldcup"
       ? "Fonte: API pública worldcup2026"
+      : source === "proxy"
+        ? "Fonte: proxy interno"
       : source === "fallback"
         ? "Fonte: fallback Firestore"
         : "Nenhum dado disponível no momento";
@@ -94,9 +96,12 @@ export function GroupsPageClient() {
                 counts={counts}
                 onChange={setActiveFilter}
               />
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                {sourceLabel}
-              </p>
+              <div className="text-right text-xs uppercase tracking-[0.2em] text-slate-400">
+                <p>{sourceLabel}</p>
+                <p>
+                  {matches.length} jogos · {groups.length} grupos
+                </p>
+              </div>
             </div>
 
             {filteredGroups.length > 0 ? (

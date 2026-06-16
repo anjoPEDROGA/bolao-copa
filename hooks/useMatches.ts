@@ -12,10 +12,14 @@ type MatchesResponse = {
 
 async function fetchMatchesWithFallback(): Promise<MatchesResponse> {
   try {
-    const worldcupMatches = await fetchWorldcupMatches();
+    const worldcupResponse = await fetchWorldcupMatches();
+    const worldcupMatches = worldcupResponse.data;
 
     if (worldcupMatches.length > 0) {
-      return { matches: worldcupMatches, source: "worldcup" };
+      return {
+        matches: worldcupMatches,
+        source: worldcupResponse.source === "proxy" ? "proxy" : "worldcup"
+      };
     }
 
     const fallbackMatches = await fetchMatchesFromFallback();

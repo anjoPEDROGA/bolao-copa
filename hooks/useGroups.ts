@@ -11,10 +11,14 @@ type GroupsResponse = {
 
 async function fetchGroupsWithFallback(): Promise<GroupsResponse> {
   try {
-    const worldcupGroups = await fetchWorldcupGroups();
+    const worldcupResponse = await fetchWorldcupGroups();
+    const worldcupGroups = worldcupResponse.data;
 
     if (worldcupGroups.length > 0) {
-      return { groups: worldcupGroups, source: "worldcup" };
+      return {
+        groups: worldcupGroups,
+        source: worldcupResponse.source === "proxy" ? "proxy" : "worldcup"
+      };
     }
 
     const fallbackGroups = await fetchGroupsFromFallback();

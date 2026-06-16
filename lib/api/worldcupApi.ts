@@ -14,32 +14,44 @@ import {
   normalizeWorldcupTeam
 } from "./normalizers";
 
-export function getWorldcupApiBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_WORLDCUP_API_BASE_URL ?? "https://worldcup26.ir").replace(
-    /\/+$/,
-    ""
-  );
-}
+type ProxyResponse<T> = {
+  source?: string;
+  data?: T;
+  error?: string | null;
+};
 
-export async function fetchWorldcupJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${getWorldcupApiBaseUrl()}${path}`, {
+export type WorldcupProxyResult<T> = {
+  source: "proxy" | "empty";
+  data: T;
+  error?: string | null;
+};
+
+async function fetchProxyJson<T>(path: string): Promise<ProxyResponse<T>> {
+  const response = await fetch(`/api/worldcup${path}`, {
     cache: "no-store"
   });
 
   if (!response.ok) {
-    throw new Error(`Worldcup API error: ${response.status}`);
+    throw new Error(`Worldcup proxy error: ${response.status}`);
   }
 
-  return (await response.json()) as T;
+  return (await response.json()) as ProxyResponse<T>;
 }
 
-export function extractArrayPayload(value: unknown): unknown[] {
+function extractArrayPayload(value: unknown): unknown[] {
   if (Array.isArray(value)) {
     return value;
   }
 
   if (isRecord(value)) {
-    const candidates = [value.games, value.data, value.matches, value.groups, value.teams, value.stadiums];
+    const candidates = [
+      value.games,
+      value.data,
+      value.matches,
+      value.groups,
+      value.teams,
+      value.stadiums
+    ];
 
     for (const candidate of candidates) {
       if (Array.isArray(candidate)) {
@@ -51,35 +63,75 @@ export function extractArrayPayload(value: unknown): unknown[] {
   return [];
 }
 
-export async function fetchWorldcupMatches(): Promise<Match[]> {
-  const payload = await fetchWorldcupJson<unknown>("/get/games");
-  return extractArrayPayload(payload)
+function normalizeMatchesPayload(value: unknown): Match[] {
+  return extractArrayPayload(value)
     .map((item) => normalizeWorldcupMatch(item as WorldcupApiMatch))
     .filter((item): item is Match => item !== null);
 }
 
-export async function fetchWorldcupGroups(): Promise<Group[]> {
-  const payload = await fetchWorldcupJson<unknown>("/get/groups");
-  return extractArrayPayload(payload)
+function normalizeGroupsPayload(value: unknown): Group[] {
+  return extractArrayPayload(value)
     .map((item) => normalizeWorldcupGroup(item as WorldcupApiGroup))
     .filter((item): item is Group => item !== null);
 }
 
-export async function fetchWorldcupTeams(): Promise<Array<{ id: string; name: string }>> {
-  const payload = await fetchWorldcupJson<unknown>("/get/teams");
-  return extractArrayPayload(payload)
+function normalizeTeamsPayload(value: unknown): Array<{ id: string; name: string }> {
+  return extractArrayPayload(value)
     .map((item) => normalizeWorldcupTeam(item as WorldcupApiTeam))
     .filter((item): item is { id: string; name: string } => item !== null);
 }
 
-export async function fetchWorldcupStadiums(): Promise<
-  Array<{ id: string; name: string; city?: string; country?: string }>
-> {
-  const payload = await fetchWorldcupJson<unknown>("/get/stadiums");
-  return extractArrayPayload(payload)
+function normalizeStadiumsPayload(
+  value: unknown
+): Array<{ id: string; name: string; city?: string; country?: string }> {
+  return extractArrayPayload(value)
     .map((item) => normalizeWorldcupStadium(item as WorldcupApiStadium))
     .filter(
       (item): item is { id: string; name: string; city?: string; country?: string } =>
         item !== null
     );
+}
+
+export async function fetchWorldcupMatches(): Promise<WorldcupProxyResult<Match[]>> {
+  const payload = await fetchProxyJson<unknown>("/games");
+  const data = normalizeMatchesPayload(payload.data ?? payload);
+  return {
+    source: data.length > 0 ? "proxy" : "empty",
+    data,
+    error: payload.error ?? null
+  };
+}
+
+export async function fetchWorldcupGroups(): Promise<WorldcupProxyResult<Group[]>> {
+  const payload = await fetchProxyJson<unknown>("/groups");
+  const data = normalizeGroupsPayload(payload.data ?? payload);
+  return {
+    source: data.length > 0 ? "proxy" : "empty",
+    data,
+    error: payload.error ?? null
+  };
+}
+
+export async function fetchWorldcupTeams(): Promise<
+  WorldcupProxyResult<Array<{ id: string; name: string }>>
+> {
+  const payload = await fetchProxyJson<unknown>("/teams");
+  const data = normalizeTeamsPayload(payload.data ?? payload);
+  return {
+    source: data.length > 0 ? "proxy" : "empty",
+    data,
+    error: payload.error ?? null
+  };
+}
+
+export async function fetchWorldcupStadiums(): Promise<
+  WorldcupProxyResult<Array<{ id: string; name: string; city?: string; country?: string }>>
+> {
+  const payload = await fetchProxyJson<unknown>("/stadiums");
+  const data = normalizeStadiumsPayload(payload.data ?? payload);
+  return {
+    source: data.length > 0 ? "proxy" : "empty",
+    data,
+    error: payload.error ?? null
+  };
 }
